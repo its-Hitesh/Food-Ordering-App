@@ -1,39 +1,61 @@
 import classes from './AvaliableMeals.module.css'
 import Card from '../UI/Card';
 import MealsItems from './MealItems/MealsItems';
-const DUMMY_MEALS = [
-    {
-      id: 'm1',
-      name: 'Sushi',
-      description: 'Finest fish and veggies',
-      price: 22.99,
-    },
-    {
-      id: 'm2',
-      name: 'Schnitzel',
-      description: 'A german specialty!',
-      price: 16.5,
-    },
-    {
-      id: 'm3',
-      name: 'Barbecue Burger',
-      description: 'American, raw, meaty',
-      price: 12.99,
-    },
-    {
-      id: 'm4',
-      name: 'Green Bowl',
-      description: 'Healthy...and green...',
-      price: 18.99,
-    },
-  ];
+import { useEffect, useState } from 'react';
 
-  const AvaliableMeals = () => {
+const AvaliableMeals = () => {
+    const [meals, setMeals] = useState([]);
+    const [isLoading, setLoading] = useState(true);
+    const [httperror, setHttpError] = useState();
+
+    useEffect(() => {
+      const fetchMeals = async() => {
+        const response = await fetch('https://learnreact-e25da-default-rtdb.firebaseio.com/Meals.json');
+        if(!response.ok){
+          throw new Error('Something went wrong!');
+        }
+        const responseData = await response.json();
+        const loadedItems = [];
+        for(const key in responseData) {
+          loadedItems.push({
+            id : key,
+            name : responseData[key].name,
+            description : responseData[key].description,
+            price : responseData[key].price,
+          });
+        }
+        setLoading(false);
+        setMeals(loadedItems);
+      }
+        fetchMeals().catch((error) => {
+          setLoading(false);
+          setHttpError(error.message);
+        });
+    },[]);
+
     
-    const mealList = DUMMY_MEALS.map((meal) => (
-        <MealsItems id = {meal.id} key ={meal.id} meal ={meal}/>
-        ));
+    const mealList = meals.map((meal) =>(
+      <MealsItems 
+      key= {meal.id}
+      id = {meal.id} 
+      name = {meal.name}
+      description = {meal.description}
+      price = {meal.price}
+      /> 
+      ));
     
+    if(isLoading){
+      return<section className={classes.meals}>
+        <p className ={classes.MealLoading}>Loading...</p>
+      </section>
+    }
+
+    if(httperror){
+      return<section className={classes.meals}>
+        <p className ={classes.MealError}>{httperror}</p>
+      </section>
+    }
+      
     return (
         <section className={classes.meals}>
             <Card>
